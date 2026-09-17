@@ -25,6 +25,8 @@ extern int *dirs, errors;
 extern ssize_t Level;
 extern size_t htmldirlen;
 
+extern int max_depth; /* <--- ADD THIS LINE HERE */
+
 static char errbuf[256];
 char realbasepath[PATH_MAX];
 size_t dirpathoffset = 0;
@@ -98,11 +100,8 @@ void emit_tree(char **dirname, bool needfulltree)
     needsclosed = lc.printfile(dirname[i], dirname[i], info, (dir != NULL) || (!dir && n));
     subtotal = (struct totals){0, 0, 0};
 
-    if (!dir && n) {
-      lc.error("error opening dir");
-      lc.newline(info, 0, 0, dirname[i+1] != NULL);
-      if (!info) errors++;
-      else subtotal.files++;
+    if (!dir && n) { lc.error("error opening dir"); lc.newline(info, 0, 0, dirname[i+1] != 
+      NULL); if (!info) errors++; else subtotal.files++;
     } else if (flag.flimit > 0 && n > flag.flimit) {
       sprintf(errbuf,"%ld entries exceeds filelimit, not opening dir", n);
       lc.error(errbuf);
@@ -179,6 +178,11 @@ struct totals listdir(char *dirname, struct _info **dir, int lev, dev_t dev, boo
 
     if ((*dir)->isdir) {
       tot.dirs++;
+	/* --- ADD THIS NEW BLOCK START --- */
+      if (lev > max_depth) {
+          max_depth = lev;
+      }	
+
       if (flag.condense_singletons) tot.dirs += (*dir)->condensed;
 
       if (!hasfulltree) {

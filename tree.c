@@ -28,6 +28,10 @@ char *hversion= "\t\t tree v2.3.2 %s 1996 - 2026 by Steve Baker and Thomas Moore
 struct Flags flag;
 struct listingcalls lc;
 
+int max_depth = 0;      /* <--- ADD THIS LINE HERE */
+bool statflag = false;
+char *custom_ext = NULL;
+
 int pattern = 0, maxpattern = 0, ipattern = 0, maxipattern = 0;
 char **patterns = NULL, **ipatterns = NULL;
 
@@ -377,6 +381,29 @@ int main(int argc, char **argv)
 	      flag.noreport = (opt_toggle? !flag.noreport : true);
 	      break;
 	    }
+	   /* --- ADD THIS NEW BLOCK START --- */
+	    if (!strcmp("--stat", argv[i])) {
+	      j = strlen(argv[i])-1;
+	      flag.statflag = (opt_toggle? !flag.statflag : true);
+	      break;
+	    }
+
+            if (!strcmp("--size", argv[i])) {
+	      j = strlen(argv[i])-1;
+	      flag.sizeflag = (opt_toggle? !flag.sizeflag : true);
+	      /* Turn on the internal engine options to force sizing logic */
+	      flag.s = flag.sizeflag;
+	      break;
+	    }
+            /* --- ADD THIS NEW BLOCK END --- */
+	   /* --- ADD THIS NEW BLOCK START --- */
+	    if ((arg = long_arg(argv, i, &j, &n, "--filter")) != NULL) {
+	      flag.filterflag = true;
+	      custom_ext = scopy(arg);
+	      break;
+	    }
+         /* --- ADD THIS NEW BLOCK END --- */
+
 	    if (!strcmp("--nolinks",argv[i])) {
 	      j = strlen(argv[i])-1;
 	      flag.nolinks = (opt_toggle? !flag.nolinks : true);
@@ -599,6 +626,11 @@ int main(int argc, char **argv)
     dirname[0] = scopy(".");
     dirname[1] = NULL;
   }
+
+  if (flag.sizeflag) {
+    flag.du = true;  /* Ensures directories calculate their aggregate child contents */
+  }
+
   if (topsort == NULL) topsort = basesort;
   if (basesort == NULL) topsort = NULL;
   if (timefmt) setlocale(LC_TIME,"");
@@ -877,6 +909,19 @@ struct _info *getinfo(const char *name, char *path)
 #endif
 
   if (flag.d && ((st.st_mode & S_IFMT) != S_IFDIR)) return NULL;
+
+
+  /* --- ADD THIS FILTER EVALUATION START --- */
+  if (flag.filterflag && !isdir) {
+    size_t name_len = strlen(name);
+    size_t ext_len = strlen(custom_ext);
+    
+    // Check if the filename ends exactly with the specified extension suffix
+    if (name_len < ext_len || strcmp(name + name_len - ext_len, custom_ext) != 0) {
+      return NULL; // Drops the file from the graph print mapping entirely
+    }
+  }
+  /* --- ADD THIS FILTER EVALUATION END --- */
 
 #ifndef __EMX__
 /*    if (pattern && ((lst.st_mode & S_IFMT) == S_IFLNK) && !lflag) continue; */

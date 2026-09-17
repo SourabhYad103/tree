@@ -26,6 +26,8 @@ static char info[512] = {0};
 
 extern char realbasepath[PATH_MAX];
 extern size_t dirpathoffset;
+extern int max_depth; /* <--- ADD THIS LINE HERE */
+
 
 int unix_printinfo(char *dirname, struct _info *file, int level)
 {
@@ -82,6 +84,14 @@ int unix_printfile(char *dirname, char *filename, struct _info *file, int descen
   printit(filename);
   if (colored) endcolor();
 
+   if (flag.sizeflag && file) {
+    char size_buf[64];
+    psize(size_buf, file->size); /* Uses tree's built-in human/byte sizing generator */
+    fprintf(outfile, " (%s)", size_buf + (size_buf[0] == ' ' ? 1 : 0)); /* Cleans extra whitespace padding */
+  }
+  /* ------------------------------------ */
+
+
   if (file) {
     if (flag.hyper) close_hyperlink();
 
@@ -135,6 +145,14 @@ void unix_newline(struct _info *file, int level, int postdir, int needcomma)
 void unix_report(struct totals tot)
 {
   char buf[256];
+  /* --- ADD THIS CHECK BLOCK START --- */
+  if (flag.statflag) {
+    fprintf(outfile, "\n=== Tree Statistics ===\n");
+    fprintf(outfile, "Total Directories : %ld\n", tot.dirs);
+    fprintf(outfile, "Total Files       : %ld\n", tot.files);
+    fprintf(outfile, "Maximum Depth     : %d\n", max_depth + 1); // +1 accommodates base root level
+    return;
+  }
 
   fputc('\n', outfile);
   if (flag.du) {

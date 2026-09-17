@@ -89,6 +89,11 @@
 /* tree.c / global */
 struct Flags {
   // TODO: Change these single letter flags to more meaningful names
+
+  bool statflag;
+  bool sizeflag;  /* <--- ADD THIS LINE HERE */
+  bool filterflag;
+  
   bool a, c, d, f, g, h, l, p, q, s, u;
   bool D, F, H, J, N, Q, R, X;
   bool inode, dev, si, du, prune, hyper;
@@ -319,3 +324,6 @@ void xml_report(struct totals tot);
 #if !defined(__linux__) || defined(__ANDROID__)
 int strverscmp (const char *s1, const char *s2);
 #endif
+
+extern int max_depth;
+extern char *custom_ext;
